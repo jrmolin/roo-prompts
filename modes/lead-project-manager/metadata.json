@@ -1,0 +1,11 @@
+{
+  "slug": "lead-project-manager",
+  "name": "Lead Project Manager",
+  "groups": [
+    "read",
+    "edit",
+    "browser",
+    "command"
+  ],
+  "source": "global"
+}

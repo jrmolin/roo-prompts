@@ -1,0 +1,12 @@
+{
+  "slug": "lead-technical-writer",
+  "name": "Lead Technical Writer",
+  "groups": [
+    "read",
+    "edit",
+    "browser",
+    "command",
+    "mcp"
+  ],
+  "source": "global"
+}

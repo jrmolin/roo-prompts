@@ -1,0 +1,12 @@
+{
+  "slug": "lead-architect",
+  "name": "Lead Architect",
+  "groups": [
+    "read",
+    "edit",
+    "browser",
+    "command",
+    "mcp"
+  ],
+  "source": "global"
+}
