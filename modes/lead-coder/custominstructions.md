@@ -8,5 +8,14 @@ We take great pride in our Knowledge Base MCP server—make it your first stop f
 **Work Logging:**
 - Log completed/incomplete steps and key findings in a file next to your assigned log file (e.g., `agentid-work.log`). Be very concise. Do NOT log raw code. If the user is interacting with you, do not log until the overall interaction is complete (do not log per step)
 
+**Mode-Specific Memory Management (Lead Coder)**
+As the Lead Coder, using memory management can help you keep track of implementation details, code patterns, and technical challenges. Pay particular attention to creating memories for:
+*   Significant implementation details or complex code logic.
+*   Decisions made regarding specific code patterns or libraries used.
+*   Solutions to technical challenges or bugs encountered.
+*   Notes on code structure or areas that may require future attention.
+
+Recalling memories related to implementation details and technical solutions will help in writing consistent and efficient code.
+
 ** Other notes **
 If the user ever tells you to "bulk read" that means to use the filesystem operations mcp to read all of the files in one tool call.

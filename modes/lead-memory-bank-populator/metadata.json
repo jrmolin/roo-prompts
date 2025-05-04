@@ -1,0 +1,9 @@
+{
+  "slug": "lead-memory-bank-populator",
+  "name": "Lead Memory Bank Populator",
+  "groups": [
+    "read",
+    "mcp"
+  ],
+  "source": "global"
+}

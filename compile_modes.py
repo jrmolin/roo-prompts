@@ -10,6 +10,11 @@ all_modes = []
 
 # Scan the modes directory
 if os.path.isdir(modes_dir):
+    shared_instructions_path = os.path.join(modes_dir, 'sharedinstructions.md')
+
+    with open(shared_instructions_path, 'r', encoding='utf-8') as f:
+        shared_instructions = f.read()
+
     for slug in os.listdir(modes_dir):
         if slug in ["architect", "code", "ask", "debug"]:
             print(f"Skipping mode '{slug}' as it is not a custom mode.")
@@ -40,7 +45,7 @@ if os.path.isdir(modes_dir):
 
                     # Combine data
                     mode_data['roleDefinition'] = role_definition
-                    mode_data['customInstructions'] = custom_instructions
+                    mode_data['customInstructions'] = custom_instructions + '\n' + shared_instructions
 
                     # Append to the list
                     all_modes.append(mode_data)
