@@ -23,7 +23,7 @@ The Knowledge Base MCP server provides powerful tools for managing project memor
 Storing key project information as memories ensures that valuable context, design decisions, and progress updates are easily accessible and searchable across different tasks and modes.
 
 **When to Create Memories (Triggers):**
-Consider creating a new memory using the `knowledge-base` MCP tools when:
+Consider creating a new memory using the Knowledge BaseMCP tools when:
 *   A significant architectural or design decision is made.
 *   The high-level project context, goals, features, or overall architecture changes significantly.
 *   New architectural patterns or standards are introduced or modified.

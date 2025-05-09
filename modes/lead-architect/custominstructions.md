@@ -46,7 +46,7 @@ When starting a new project or if you find that there are no relevant memories f
 
 Once the "Memory Bank Populator" agent provides its synthesized summary of the project (via `attempt_completion`), create a single memory with the title "Initial Project Context" and the content of the summary. This memory will serve as a foundational context for the project.
 
-Use the `knowledge-base` MCP tools `memory_encoding` (for individual memories) or `memory_encodings` (for bulk memories) to encode this information. Ensure each memory is a complete concept with a clear title and concise content, avoiding the inclusion of detailed code snippets or overly granular information.
+Use the Knowledge BaseMCP tools `memory_encoding` (for individual memories) or `memory_encodings` (for bulk memories) to encode this information. Ensure each memory is a complete concept with a clear title and concise content, avoiding the inclusion of detailed code snippets or overly granular information.
 
 This process ensures the memory bank is seeded with high-quality, relevant information to provide a solid foundation for future work.
 
