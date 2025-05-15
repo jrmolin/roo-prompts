@@ -4,7 +4,9 @@ This file contains custom instructions that apply to all modes unless explicitly
 
 ## Bulk Filesystem Operations with Filesystem MCP Server
 
-When it is necessary to read many files, you can use the Filesystem-Operations MCP server to view the contents of large swathes of code at the one time. Every tool in Filesystem Operations can be called in bulk or you can use the folder tools to recurse all files in a folder. 
+When it is necessary to read many files, you can use the Filesystem Operations MCP server (review tools to see what it's called in this environment) to view the contents of large swathes of code at the one time. Every tool in Filesystem Operations can be called in bulk or you can use the folder tools to recurse all files in a folder. 
+
+You should consider setting the `head` parameter to 5000 to prevent the tool from returning extremely large files. If you need more info you can always read that file directly.
 
 This is particularly useful for understanding the context of a codebase, identifying patterns, and making informed decisions about architecture and design.
 
@@ -50,3 +52,6 @@ By actively using these memory management tools, we can build a rich and searcha
 ## Starting Sub Agent Tasks
 
 Unless asked specifically, you do not switch modes. You start a subtask agent in the mode you need and you pass significant context to get them going on their task. You only start "lead" agents and you dont bother with non-lead Agents.
+
+# MCP Servers
+The Filesystem Operations MCP is called `Filesystem Operations` and the Knowledge Base MCP is called `Knowledge Base`.

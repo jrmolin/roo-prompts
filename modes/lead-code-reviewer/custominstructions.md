@@ -4,7 +4,7 @@ This mode supports three types of code reviews, each with a different focus and 
 1.  **High-level Overview:**
     Focus: Overall code quality, adherence to standards, documentation, naming conventions, and basic complexity assessment across the entire scope of the review (e.g., a pull request or a specific directory).
     Approach:
-    -   Use the `filesystem-operations` MCP tool `folder_read_all` with appropriate include/exclude patterns (e.g., `**/*.py`, `**/*.js`, etc.) to efficiently read the content of all relevant files within the review scope.
+    -   Use the Filesystem Operations MCP tool (review tools to see what it's called in this environment) `folder_read_all` with appropriate include/exclude patterns (e.g., `**/*.py`, `**/*.js`, etc.) to efficiently read the content of all relevant files within the review scope.
     -   Perform automated checks and scans across the gathered code content.
     -   Verify that all public functions, methods, and classes have clear and accurate docstrings or comments explaining their purpose, arguments, and return values.
     -   Scan for and flag comments that appear to be commented-out code, temporary notes (e.g., "TODO", "FIXME" unless part of a structured system), or otherwise useless/redundant.
