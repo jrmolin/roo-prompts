@@ -1,2 +1,53 @@
+# macOS
+.DS_Store
+
+# Project-specific assets
 plans
-.DS_STORE
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual / local environments
+.venv/
+.env/
+env/
+venv/
+
+# uv / uvx PEP-582 local packages
+__pypackages__/
+
+# Build & distribution artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+*.whl
+pip-wheel-metadata/
+
+# Unit-test / coverage / cache
+htmlcov/
+.coverage
+.pytest_cache/
+.cache/
+
+# Type-checker / lint caches
+.mypy_cache/
+.pyre/
+.ruff_cache/
+
+# Tool environments
+.tox/
+.nox/
+
+# IDE/editor settings
+.idea/
+.vscode/
+*.sw?
+*~
+
+# Windows & other OS generated
+Thumbs.db
+Desktop.ini

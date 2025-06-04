@@ -1,76 +1,295 @@
-import os
+#!/usr/bin/env python3
+"""Generate Roo custom mode assets.
+
+This script merges the capabilities of `compile_modes.py` and
+`convert_modes_to_windsurf_rules.py`.
+
+It performs two tasks:
+1. Compile all **custom** modes (excluding core built-ins) into consolidated
+   `custom_modes.json` and `custom_modes.yaml` files that bundle metadata,
+   role definitions and custom instructions (with shared instructions
+   automatically appended).
+2. Convert each custom mode into an individual Windsurf rule Markdown file
+   plus an `_index.md` catalogue and a `workflow.md` Mermaid diagram.
+
+Both tasks run in a single invocation so callers only need to execute **one
+command** instead of two.
+
+Example
+-------
+```bash
+python generate_modes_assets.py \
+  --modes-dir ./modes \
+  --json-out ./custom_modes.json \
+  --yaml-out ./custom_modes.yaml \
+  --rules-out-dir ./.windsurf/rules/roo-modes
+```
+"""
+from __future__ import annotations
+
+import argparse
 import json
+import textwrap
+from pathlib import Path
+from typing import List, Dict
 
-# Define constants
-modes_dir = 'modes'
-output_file = 'custom_modes.json' # Note the underscore as per plan
+import yaml  # PyYAML is required
 
-# Initialize list to hold mode data
-all_modes = []
+# Built-in modes that should **not** be treated as custom modes.
+BUILTIN_MODES = {"architect", "code", "ask", "debug"}
 
-# Scan the modes directory
-if os.path.isdir(modes_dir):
-    shared_instructions_path = os.path.join(modes_dir, 'sharedinstructions.md')
+# ---------------------------------------------------------------------------
+# Helper utilities
+# ---------------------------------------------------------------------------
 
-    with open(shared_instructions_path, 'r', encoding='utf-8') as f:
-        shared_instructions = f.read()
+def read_file(path: Path) -> str:
+    """Return UTF-8 text from *path* or empty string if the file is missing."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
 
-    for slug in os.listdir(modes_dir):
-        if slug in ["architect", "code", "ask", "debug"]:
-            print(f"Skipping mode '{slug}' as it is not a custom mode.")
+
+def first_sentence(text: str) -> str:
+    """Extract a short description (first sentence/line) from *text*."""
+    for sep in (". ", "\n"):
+        if sep in text:
+            return text.split(sep, 1)[0].strip()
+    return text.strip()
+
+# ---------------------------------------------------------------------------
+# "Compile" stage – produce JSON / YAML aggregate files
+# ---------------------------------------------------------------------------
+
+def compile_modes(
+    modes_dir: Path,
+    json_out: Path,
+    yaml_out: Path,
+    user: str | None = None,
+) -> None:
+    """Aggregate custom modes into *json_out* and *yaml_out*."""
+
+    if not modes_dir.is_dir():
+        raise FileNotFoundError(f"Modes directory not found: {modes_dir}")
+
+    shared_instructions = read_file(modes_dir / "sharedinstructions.md")
+    all_modes: List[dict] = []
+
+    for mode_path in modes_dir.iterdir():
+        if not mode_path.is_dir():
             continue
-        
-        mode_path = os.path.join(modes_dir, slug)
+        if mode_path.name in BUILTIN_MODES:
+            continue  # Skip built-ins shipped with Roo
 
-        # Check if it's a directory
-        if os.path.isdir(mode_path):
-            metadata_path = os.path.join(mode_path, 'metadata.json')
-            roledef_path = os.path.join(mode_path, 'roledefinition.md')
-            instructions_path = os.path.join(mode_path, 'custominstructions.md')
+        metadata_path = mode_path / "metadata.json"
+        roledef_path = mode_path / "roledefinition.md"
+        instructions_path = mode_path / "custominstructions.md"
 
-            # Ensure all required files exist
-            if os.path.exists(metadata_path) and os.path.exists(roledef_path) and os.path.exists(instructions_path):
-                try:
-                    # Read metadata.json
-                    with open(metadata_path, 'r', encoding='utf-8') as f:
-                        mode_data = json.load(f)
+        if not (metadata_path.exists() and roledef_path.exists() and instructions_path.exists()):
+            print(f"[WARN] Incomplete mode skipped: {mode_path.name}")
+            continue
 
-                    # Read roledefinition.md
-                    with open(roledef_path, 'r', encoding='utf-8') as f:
-                        role_definition = f.read()
+        try:
+            mode_meta = json.loads(read_file(metadata_path))
+            role_definition = read_file(roledef_path)
+            custom_instructions = read_file(instructions_path)
 
-                    # Read custominstructions.md
-                    with open(instructions_path, 'r', encoding='utf-8') as f:
-                        custom_instructions = f.read()
+            mode_meta["roleDefinition"] = role_definition
+            mode_meta["customInstructions"] = f"{custom_instructions}\n{shared_instructions}"
 
-                    # Combine data
-                    mode_data['roleDefinition'] = role_definition
-                    mode_data['customInstructions'] = custom_instructions + '\n' + shared_instructions
+            all_modes.append(mode_meta)
+        except Exception as exc:  # pragma: no cover – defensive
+            print(f"[ERR] Failed processing {mode_path.name}: {exc}")
 
-                    # Append to the list
-                    all_modes.append(mode_data)
-                except Exception as e:
-                    print(f"Error processing mode '{slug}': {e}")
+    output_data = {"customModes": all_modes}
+
+    # Ensure parent dirs exist then write outputs
+    json_out.parent.mkdir(parents=True, exist_ok=True)
+    yaml_out.parent.mkdir(parents=True, exist_ok=True)
+
+    json_out.write_text(json.dumps(output_data, indent=2, ensure_ascii=False), encoding="utf-8")
+    yaml_out.write_text(yaml.dump(output_data, indent=2, allow_unicode=True), encoding="utf-8")
+
+    print(f"[OK] Wrote {json_out.relative_to(Path.cwd())}")
+    print(f"[OK] Wrote {yaml_out.relative_to(Path.cwd())}")
+
+    # Optionally sync to IDE settings directories (for local development)
+    if user:
+        ide_targets = {"Code": "json", "Windsurf": "yaml"}
+        base_tpl = (
+            "/Users/{user}/Library/Application Support/{product}/User/globalStorage/"
+            "rooveterinaryinc.roo-cline/settings/custom_modes.{ext}"
+        )
+        for product, ext in ide_targets.items():
+            dest = Path(base_tpl.format(user=user, product=product, ext=ext))
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if ext == "yaml":
+                dest.write_text(yaml.dump(output_data, indent=2, allow_unicode=True), encoding="utf-8")
             else:
-                print(f"Warning: Skipping mode '{slug}' due to missing files.")
+                dest.write_text(json.dumps(output_data, indent=2, ensure_ascii=False), encoding="utf-8")
+            print(f"[OK] Synced settings: {dest}")
 
-else:
-    print(f"Error: Modes directory '{modes_dir}' not found.")
+# ---------------------------------------------------------------------------
+# "Convert" stage – generate Windsurf rule Markdown files
+# ---------------------------------------------------------------------------
 
-# Prepare final output structure
-output_data = {"customModes": all_modes}
+def convert_modes_to_rules(modes_dir: Path, output_dir: Path) -> None:
+    """Translate custom modes into individual Windsurf rule files."""
 
-# Write the output file
-try:
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(output_data, f, indent=2, ensure_ascii=False)
-    print(f"Successfully compiled modes to '{output_file}'")
-except Exception as e:
-    print(f"Error writing output file '{output_file}': {e}")
+    if not modes_dir.is_dir():
+        raise FileNotFoundError(f"Modes directory not found: {modes_dir}")
+
+    shared_instructions = read_file(modes_dir / "sharedinstructions.md")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    rule_summaries: List[Dict[str, str]] = []  # For the catalogue
+
+    for mode_path in modes_dir.iterdir():
+        if not mode_path.is_dir():
+            continue
+        if mode_path.name in BUILTIN_MODES:
+            continue  # Skip core modes
+
+        metadata_path = mode_path / "metadata.json"
+        roledef_path = mode_path / "roledefinition.md"
+        instructions_path = mode_path / "custominstructions.md"
+
+        if not (metadata_path.exists() and roledef_path.exists() and instructions_path.exists()):
+            print(f"[WARN] Incomplete mode skipped: {mode_path.name}")
+            continue
+
+        metadata = json.loads(read_file(metadata_path))
+        slug = metadata.get("slug", mode_path.name)
+        name = metadata.get("name", slug.replace("-", " ").title())
+
+        role_definition = read_file(roledef_path)
+        custom_instructions = read_file(instructions_path)
+
+        rule_body = (
+            f"""---
+trigger: model_decision
+description: {first_sentence(role_definition)}
+---
+# {name}
+
+## Role Definition
+{role_definition}
+
+## Custom Instructions
+{custom_instructions}
+"""
+        )
+
+        rule_path = output_dir / f"{slug}.md"
+        rule_path.write_text(rule_body, encoding="utf-8")
+        print(f"[OK] Wrote rule: {rule_path.relative_to(Path.cwd())}")
+
+        rule_summaries.append(
+            {"slug": slug, "name": name, "description": first_sentence(role_definition)}
+        )
+
+    # ---------------------------------------------------------------------
+    # _index.md (always_on)
+    # ---------------------------------------------------------------------
+    bullets = (
+        "\n".join(
+            f"* **{item['name']}** (`{item['slug']}.md`) — {item['description']}" for item in rule_summaries
+        )
+        if rule_summaries
+        else "*(No rules generated)*"
+    )
+
+    index_body = (
+        f"""---
+trigger: always_on
+description: Overview of Roo custom mode rules converted for Windsurf.
+---
+# Roo Custom Mode Rules — Overview
+
+This file is **always on** and provides a catalogue of all converted Roo
+custom modes. Each individual rule is loaded with `trigger: model_decision` and
+will only activate when relevant to the current model decision context.
+
+## Available Rules
+{bullets}
+
+## Shared Instructions (apply to all modes)
+{shared_instructions}
+"""
+    )
+
+    (output_dir / "_index.md").write_text(index_body, encoding="utf-8")
+    print(f"[OK] Wrote index: {(output_dir / '_index.md').relative_to(Path.cwd())}")
+
+    # ---------------------------------------------------------------------
+    # workflow.md (Mermaid diagram)
+    # ---------------------------------------------------------------------
+    # Build adaptive workflow diagram from README details
+    workflow_body = textwrap.dedent(
+        """
+        # Adaptive Mode Workflow
+
+        The following Mermaid diagram summarizes the adaptive workflow outlined in `readme.md`.
+
+        ```mermaid
+        graph TD
+            U[User] --> PM[Project Manager]
+            PM -->|Delegates planning| A[Architect]
+            A -->|Lite-Touch| PlanLite[plan.md]
+            A -->|Heavy-Touch| PlanHeavy[plan.md & plan-X.md & plan-verify.md]
+            A --> U
+            PM -->|Review plan| Code[Code Agents]
+            Code -->|Execute tasks| Work[Work Log]
+            Code -->|Context threshold| Handoff[handoff-<timestamp>.md]
+            Handoff --> PM
+            PM -->|Launch new agent| NewAgent[Next Agent]
+            PM --> Verify[Verification Agent]
+            Verify --> U
+        ```
+        """
+    ).lstrip()
+
+    (output_dir / "workflow.md").write_text(workflow_body, encoding="utf-8")
+    print(f"[OK] Wrote workflow: {(output_dir / 'workflow.md').relative_to(Path.cwd())}")
+
+# ---------------------------------------------------------------------------
+# CLI entry-point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Generate compiled mode files and Windsurf rules from Roo custom modes."
+    )
+    parser.add_argument(
+        "--modes-dir", default="./modes", help="Directory containing the Roo modes (default: %(default)s)"
+    )
+    parser.add_argument(
+        "--json-out", default="./custom_modes.json", help="Path for aggregated JSON output (default: %(default)s)"
+    )
+    parser.add_argument(
+        "--yaml-out", default="./custom_modes.yaml", help="Path for aggregated YAML output (default: %(default)s)"
+    )
+    parser.add_argument(
+        "--rules-out-dir",
+        default="./.windsurf/rules/roo-modes",
+        help="Directory to write Windsurf rule Markdown files (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--user",
+        default=None,
+        help="If set, also copy the compiled JSON/YAML into local IDE settings paths for the given macOS user.",
+    )
+    args = parser.parse_args()
+
+    modes_dir = Path(args.modes_dir).expanduser().resolve()
+    json_out = Path(args.json_out).expanduser().resolve()
+    yaml_out = Path(args.yaml_out).expanduser().resolve()
+    rules_out_dir = Path(args.rules_out_dir).expanduser().resolve()
+
+    # Run both stages
+    compile_modes(modes_dir, json_out, yaml_out, user=args.user)
+    convert_modes_to_rules(modes_dir, rules_out_dir)
 
 
-# Replace the file on disk at /Users/williameaston/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/custom_modes.json
-
-local_settings_path = '/Users/williameaston/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/custom_modes.json'
-with open(local_settings_path, 'w', encoding='utf-8') as f:
-    json.dump(output_data, f, indent=2, ensure_ascii=False)
+if __name__ == "__main__":
+    main()
