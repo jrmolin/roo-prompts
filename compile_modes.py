@@ -63,7 +63,6 @@ def first_sentence(text: str) -> str:
 
 def compile_modes(
     modes_dir: Path,
-    json_out: Path,
     yaml_out: Path,
     user: str | None = None,
 ) -> None:
@@ -104,14 +103,11 @@ def compile_modes(
     output_data = {"customModes": all_modes}
 
     # Ensure parent dirs exist then write outputs
-    json_out.parent.mkdir(parents=True, exist_ok=True)
     yaml_out.parent.mkdir(parents=True, exist_ok=True)
 
-    json_out.write_text(json.dumps(output_data, indent=2, ensure_ascii=False), encoding="utf-8")
     yaml_out.write_text(yaml.dump(output_data, indent=2, allow_unicode=True), encoding="utf-8")
 
-    print(f"[OK] Wrote {json_out.relative_to(Path.cwd())}")
-    print(f"[OK] Wrote {yaml_out.relative_to(Path.cwd())}")
+    print(f"[OK] Wrote Roo modes to {yaml_out.relative_to(Path.cwd())}")
 
     # Optionally sync to IDE settings directories (for local development)
     if user:
@@ -264,13 +260,10 @@ def main() -> None:
         "--modes-dir", default="./modes", help="Directory containing the Roo modes (default: %(default)s)"
     )
     parser.add_argument(
-        "--json-out", default="./custom_modes.json", help="Path for aggregated JSON output (default: %(default)s)"
+        "--roo-out", default="./custom_modes.yaml", help="Path for aggregated YAML output (default: %(default)s)"
     )
     parser.add_argument(
-        "--yaml-out", default="./custom_modes.yaml", help="Path for aggregated YAML output (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--rules-out-dir",
+        "--windsurf-out",
         default="./.windsurf/rules/roo-modes",
         help="Directory to write Windsurf rule Markdown files (default: %(default)s)",
     )
@@ -282,12 +275,11 @@ def main() -> None:
     args = parser.parse_args()
 
     modes_dir = Path(args.modes_dir).expanduser().resolve()
-    json_out = Path(args.json_out).expanduser().resolve()
-    yaml_out = Path(args.yaml_out).expanduser().resolve()
-    rules_out_dir = Path(args.rules_out_dir).expanduser().resolve()
+    yaml_out = Path(args.roo_out).expanduser().resolve()
+    rules_out_dir = Path(args.windsurf_out).expanduser().resolve()
 
     # Run both stages
-    compile_modes(modes_dir, json_out, yaml_out, user=args.user)
+    compile_modes(modes_dir, yaml_out, user=args.user)
     convert_modes_to_rules(modes_dir, rules_out_dir)
 
 

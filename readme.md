@@ -2,6 +2,10 @@
 
 This document outlines the intended workflow based on the custom mode definitions found in the `/modes` directory, incorporating an adaptive approach to manage complexity and context size.
 
+While you can compile your own modes, you can also use the pre-compiled modes:
+1. For Roo in ./custom_modes.yaml
+2. For Windsurf in ./.windsurf
+
 The primary workflow involves the interaction of three key modes: **Project Manager**, **Architect**, and **Code**, operating with adaptive context management.
 
 ## Adaptive Workflow Steps:
@@ -40,3 +44,16 @@ The primary workflow involves the interaction of three key modes: **Project Mana
     *   After successful verification, the `Project Manager` oversees the final handoff to the user (Strawgate).
 
 This adaptive workflow aims to optimize token usage by defaulting to simpler processes and segmenting tasks via file-based handoffs when context limits are approached, while still leveraging the specialized roles of each mode.
+
+# Compiling Modes
+
+```bash
+uv sync 
+uv run compile_modes.py
+```
+
+This will compile the modes into the following files:
+1. ./custom_modes.yaml
+2. ./.windsurf/rules/roo-modes
+
+You can then use these files in your Roo or Windsurf instances.
