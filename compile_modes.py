@@ -66,7 +66,7 @@ def compile_modes(
     yaml_out: Path,
     user: str | None = None,
 ) -> None:
-    """Aggregate custom modes into *json_out* and *yaml_out*."""
+    """Aggregate custom modes into *yaml_out*."""
 
     if not modes_dir.is_dir():
         raise FileNotFoundError(f"Modes directory not found: {modes_dir}")
@@ -111,7 +111,7 @@ def compile_modes(
 
     # Optionally sync to IDE settings directories (for local development)
     if user:
-        ide_targets = {"Code": "json", "Windsurf": "yaml"}
+        ide_targets = {"Code": "yaml", "Windsurf": "yaml"}
         base_tpl = (
             "/Users/{user}/Library/Application Support/{product}/User/globalStorage/"
             "rooveterinaryinc.roo-cline/settings/custom_modes.{ext}"
